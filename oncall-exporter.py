@@ -196,6 +196,7 @@ if __name__ == "__main__":
                         level=Config.oncall_exporter_log_level)
 
     start_http_server(port=Config.http_server_port, addr=Config.http_server_ip)
+    logging.info("started http server")
     while True:
         for func in updaters:
             try:
