@@ -1,0 +1,3 @@
+environs
+prometheus-client
+requests
