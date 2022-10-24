@@ -2,6 +2,7 @@
 import logging
 import signal
 import time
+from typing import Dict, List
 from environs import Env
 import requests
 import prometheus_client
@@ -136,6 +137,21 @@ ONCALL_TEAM_ROTATION_UNREACHABLE_BY_PHONE_COUNT = Gauge(
 )
 
 
+def match_start_time(event: Dict, time: int):
+    return event["start"] == time
+
+# oncall api returns events simply grouping by role, we want to separate them
+
+
+def filter_on_time(events: List[Dict], time: int) -> List[Dict]:
+    return list(filter(lambda e: match_start_time(e, time), events))
+
+
+def filter_on_closest_time(events: List[Dict]) -> List[Dict]:
+    closest_time = min(event["start"] for event in events)
+    return filter_on_time(events, closest_time)
+
+
 @updater
 def teams():
     resp = request_with_counting("/api/v0/teams")
@@ -164,7 +180,8 @@ def teams():
                     .labels(team_name, event_time).set(0)
                 continue
 
-            members = event["primary"] + event["secondary"]
+            members = filter_on_closest_time(event["primary"] +
+                                             event["secondary"])
 
             members_without_number = [member for member in members
                                       if "call" not in member['user_contacts']
